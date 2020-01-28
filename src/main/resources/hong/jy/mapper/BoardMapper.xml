@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="hong.jy.mapper.BoardMapper">
+ 
+ 	 <select id="getList" resultType="hong.jy.domain.BoardVO">
+ 		select seq, 
+ 			   title, 
+ 			   user, 
+ 			   readnum, 
+ 			   content, 
+ 			   regdate 
+		from freeboard 
+		where seq > 0 	
+		order by seq desc
+ 	</select> 
+ 	
+ 	<select id="getLists" resultType="hong.jy.domain.BoardVO" parameterType="hong.jy.domain.BoardVO">
+ 		select seq, title, user, readnum, content, regdate
+		from freeboard
+ 		where seq > 0
+ 		<include refid="searchCondition"></include>
+		   	order by 
+		   		  seq desc, regdate desc
+		   	limit #{pageStart}, #{perPageNum}
+ 	</select>
+ 	
+ 	
+ 	<insert id="input" parameterType="hong.jy.domain.BoardVO">
+ 		 insert into freeboard
+ 		 		(title, user, content, regdate)
+ 		 		values (#{title},#{user},#{content},now())
+ 	</insert>
+ 	
+ 	<select id="content" parameterType="Long" resultType="hong.jy.domain.BoardVO">
+		select * from freeboard where seq = #{seq} 	
+ 	</select>
+ 	
+ 	<delete id="delete" parameterType="Long" >
+ 		delete from freeboard where seq =#{seq}
+ 	</delete>
+ 	
+ 	
+ 	<update id="update" parameterType="hong.jy.domain.BoardVO">
+ 		update freeboard
+ 		   set title = #{title},
+ 		   	   user = #{user},
+ 		   	   content =#{content}
+ 		 where seq = #{seq}			   	   
+   	</update>
+   	
+   	<update id="updateReadnum" parameterType="Long">
+   		update freeboard
+   		   set readnum = ifnull(readnum, 0) +1
+   		   where seq = #{seq}
+   	</update>
+
+
+	<sql id="searchCondition">
+		<!-- 검색조건이 null이 아니라면 검색조건에 따른 데이터 조회 -->
+	   	<if test="searchType != null">
+	   		<if test="searchType == 't'.toString()">
+	   			and title like CONCAT('%', #{keyword}, '%')
+	   		</if>
+	   		<if test="searchType == 'c'.toString()">
+	   			and content like CONCAT('%', #{keyword}, '%')
+	   		</if>
+	   		<if test="searchType == 'w'.toString()">
+	   			and user like CONCAT('%', #{keyword}, '%')
+	   		</if>
+	   		<if test="searchType == 'tc'.toString()">
+	   			and (title like CONCAT('%', #{keyword}, '%')
+	   			or content like CONCAT('%', #{keyword}, '%'))
+	   		</if>
+	   		<if test="searchType == 'all'.toString()">
+	   			and (title like CONCAT('%', #{keyword}, '%')
+	   			or content like CONCAT('%', #{keyword}, '%')
+	   			or user like CONCAT('%', #{keyword}, '%'))
+	   		</if>
+   		</if>
+	</sql>	
+	<!-- paging sql -->
+	<!-- 검색 조건에 해당하는 일정 페이지 조회 -->
+   	<select id="listPage" resultType="hong.jy.domain.BoardVO">
+   		select seq, title, user, readnum, content, regdate, COUNT(seq) OVER() as totalcount
+		from freeboard
+		where seq > 0
+	<include refid="searchCondition"></include>
+		order by seq desc, regdate desc
+		limit #{pageStart}, #{perPageNum}
+	</select>
+	   	
+   	<select id="getTotalCount" resultType="int">
+   		select count(seq)
+   		from freeboard
+   		where seq > 0
+   		<include refid="searchCondition"></include>
+   	</select>
+	
+ </mapper>
